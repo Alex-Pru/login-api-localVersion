@@ -4,7 +4,7 @@ const mongoose = require("mongoose")
 const jwt = require("jsonwebtoken")
 const bcrypt = require("bcrypt")
 const fs = require("fs")
-const jwtMiddleware = require('express-jwt')
+const {expressjwt} = require('express-jwt');
 
 
 
@@ -13,10 +13,11 @@ const PORT = 3000
 
 app.use(bodyParser.json())
 
-const privateKey= fs.readFileSync('private.pem', 'utf-8')
+const privateKey = fs.readFileSync('private.pem', 'utf-8')
 const publicKey = fs.readFileSync('public.pem', 'utf-8')
 
-app.use(jwtMiddleware({secret: privateKey, algorithms: ['HS256']}))
+app.use('/api', expressjwt({ secret: privateKey, algorithms: ['HS256'] }))
+
 
 const userSchema = new mongoose.Schema({
     nome: String,
@@ -34,10 +35,11 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-mongoose.connect('mongodb://localhost:27017/api_users', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+const url = "mongodb://0.0.0.0:27017/api_users"
+
+mongoose.connect(url)
+
+
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Erro de conexão ao MongoDB: '));
@@ -66,7 +68,7 @@ app.post('/register', async (req, res) => {
 
         await newUser.save()
 
-        const token = jwt.sign({username: newUser.nome }, privateKey, {expiresIn: '30m' })
+        const token = jwt.sign({username: newUser.nome }, publicKey, {expiresIn: '30m' })
 
         const response = {
             id: newUser._id, 
